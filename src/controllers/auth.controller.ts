@@ -40,3 +40,38 @@ export async function register(req: Request, res: Response) {
     token,
   });
 }
+
+export async function getMe(req: Request, res: Response) {
+  const token = req.headers.authorization?.split(" ")[1];
+
+  if (!token) {
+    return res.status(401).json({
+      success: false,
+      message: "No token provided",
+    });
+  }
+
+  const decode = jwt.verify(token, config.JWT_SECRET);
+
+  if (typeof decode === 'string' || !('id' in decode)) {
+    return res.status(401).json({
+      success: false,
+      message: "Invalid token",
+    });
+  }
+
+  const user = await userModel.findById(decode.id);
+
+  if (!user) {
+    return res.status(404).json({
+      success: false,
+      message: "User not found",
+    });
+  }
+
+  res.status(200).json({
+    success: true,
+    message: "User found",
+    user: { username: user.username, email: user.email },
+  });
+}
